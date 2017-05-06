@@ -1,0 +1,6 @@
+version: "2"
+services:
+  logo:
+    image: ideamans/ideamans-logo
+    ports:
+      - "80:3000"

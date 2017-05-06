@@ -1,0 +1,119 @@
+#!/bin/bash
+
+# dockerベースの開発・デプロイを支援するスクリプト
+
+# .env-distを.envファイルとして複製し、内容を変更
+if [ -f .env ]; then
+  source .env
+fi
+
+PROJECT=$(basename $(pwd))
+SYMBOL=${PROJECT//[\-\._]/}
+
+# サーバ上の展開ディレクトリ
+APP_DIR="/app"
+SRC_DIR="/src"
+
+run_docker () {
+  # TODO docker-composeで依存サービスを起動する場合
+  # docker-compose up --build -d
+  # NETWORK=${SYMBOL}_default
+
+  IMAGE=${PROJECT}:dev
+  CONTAINER=${PROJECT}-dev
+
+  # 関数への引数を渡してdockerコンテナを起動
+  # TODO docker-composeで依存サービスを起動するときはcomposeネットワークも明示する
+  #  --network ${NETWORK} \
+  docker run -it \
+    -v $(pwd):/app \
+    -p 3000:3000 \
+    --env-file .env \
+    --name ${CONTAINER} ${IMAGE} $@
+
+  # 開発中に加えた変更をイメージに反映する
+  CMD=$(egrep '^CMD ' ./Dockerfile)
+  docker commit -c "${CMD}" ${CONTAINER} ${IMAGE}
+
+  # TODO docker-composeで依存サービスを起動した場合は終了する
+  # docker-compose down
+
+  docker rm ${CONTAINER}
+}
+
+push_docker () {
+  IMAGE=${PROJECT}:prod
+  CONTAINER=${PROJECT}-prod
+
+  # rsyncによりイメージにソース一式を焼き付ける(SRC_DIRの後ろの/は忘れないこと)
+  # TODO プロジェクトに応じて除外ファイルを指定する
+  docker run -it --name ${CONTAINER} \
+    -v $(pwd):$SRC_DIR \
+    ${IMAGE} \
+    rsync -rltDv --delete \
+      --include ".env-prod" \
+      --exclude ".*" \
+      --exclude "node_modules" \
+      $SRC_DIR/ $APP_DIR
+
+  # コミットするとCMDがrsyncに上書きされるため明示してイメージを更新する
+  CMD=$(egrep '^CMD ' ./Dockerfile)
+  docker commit -c "${CMD}" ${CONTAINER} ${IMAGE}
+
+  # DockerHubにpushする
+  docker tag ${IMAGE} ${REPOSITORY}
+  docker push ${REPOSITORY}
+
+  docker rm ${CONTAINER}
+}
+
+subcommand="$1"
+case $subcommand in
+  deploy)
+    # 本番サーバにデプロイする
+    push_docker
+
+    # アップロード先を確保する
+    ssh ${DEPLOY_TO} mkdir -p /apps/${PROJECT}
+
+    # TODO サーバにアップするdocker-composeファイルと環境変数ファイルを指定する
+    # このプログラムでは依存するdocker-composeがないため、docker-compose.prod.ymlを
+    # docker-compose.ymlファイルとしてアップロードする
+    scp .env-prod ${DEPLOY_TO}:/apps/${PROJECT}/.env-prod
+    scp docker-compose.yml ${DEPLOY_TO}:/apps/${PROJECT}/docker-compose.yml
+
+    # docker-appsサービスを再起動する
+    ssh ${DEPLOY_TO} docker pull ${REPOSITORY}
+    ssh ${DEPLOY_TO} systemctl restart docker-apps
+    ;;
+
+  prod)
+    # 本番環境としてコンテナを起動する
+    # TODO docker-composeファイルが他にあれば記述する
+    push_docker
+    docker-compose up --build -f docker-compose.yml
+    ;;
+
+  init)
+    # Dockerfileからイメージを作成する(dev/prod)
+    docker build -t ${PROJECT}:dev .
+    docker tag ${PROJECT}:dev ${PROJECT}:prod
+    ;;
+
+  shell)
+    # Dockerコンテナでbashシェルを起動する(サブコマンド以下の引数を渡す)
+    shift
+    run_docker "/bin/bash" $@
+    ;;
+
+  start)
+    # 任意のコマンドまたはデフォルトのコマンドでコンテナを起動する
+    shift
+    run_docker $@
+    ;;
+
+  *)
+    # ヘルプを表示する
+    echo "./mechadock init|shell|start|prod|deploy"
+    ;;
+esac
