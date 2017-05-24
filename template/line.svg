@@ -6,7 +6,7 @@
       }
 
       .cls-2 {
-        fill: #222;
+        fill: #444;
         fill-rule: evenodd;
       }
     </style>

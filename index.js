@@ -30,7 +30,7 @@ const Logos = Jsyaml.safeLoad(Fs.readFileSync(Path.format({dir: Settings.templat
 
 class HttpException extends Error {
   constructor(message, status=500) {
-    super(messaage);
+    super(message);
     this.status = status;
   }
 }
@@ -139,10 +139,11 @@ app.get('/:type.svg', (req, res, next) => {
 
   // SVG
   logo.renderSvg().then((svg) => {
-    console.log(svg.outerHTML);
     res.setHeader('Content-Type', 'image/svg+xml');
     res.send(Settings.svgDeclaration + svg.outerHTML);
     next();
+  }).catch((ex) => {
+    res.status(ex.status || 500).send(ex.message);
   });
 });
 
@@ -156,5 +157,8 @@ app.get('/:type.png', (req, res, next) => {
     res.setHeader('Content-Type', 'image/png');
     res.send(png);
     next();
+  }).catch((ex) => {
+    console.log(ex.stack);
+    res.status(ex.status || 500).send(ex.message);
   });
 });
