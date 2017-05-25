@@ -13,6 +13,7 @@ const { JSDOM } = Jsdom;
 
 const Settings = {
   templateDir: process.env.TEMPLATE_DIR || 'template',
+  minSize: parseInt(process.env.MIN_SIZE || 32);
   maxSize: parseInt(process.env.MAX_SIZE || 2400),
   seedPrefix: process.env.SEED_PREFIX || "ideaman's",
   seedDelimiter: process.env.SEED_DELIMITER || ' ',
@@ -59,6 +60,12 @@ class Logo {
       base.width = Math.round(base.width * rate);
       base.height = Math.round(base.height * rate);
     }
+
+    // サイズチェック
+    if ( base.width > Settings.maxSize ) throw new HttpException(`width over ${Settings.maxSize}`);
+    if ( base.width < Settings.minSize ) throw new HttpException(`width under ${Settings.minSize}`);
+    if ( base.height > Settings.maxSize ) throw new HttpException(`height over ${Settings.maxSize}`);
+    if ( base.height < Settings.minSize ) throw new HttpException(`height under ${Settings.minSize}`);
   }
 
   markSvg() {
