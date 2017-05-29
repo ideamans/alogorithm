@@ -13,7 +13,7 @@ const { JSDOM } = Jsdom;
 
 const Settings = {
   templateDir: process.env.TEMPLATE_DIR || 'template',
-  minSize: parseInt(process.env.MIN_SIZE || 32);
+  minSize: parseInt(process.env.MIN_SIZE || 10),
   maxSize: parseInt(process.env.MAX_SIZE || 2400),
   seedPrefix: process.env.SEED_PREFIX || "ideaman's",
   seedDelimiter: process.env.SEED_DELIMITER || ' ',
