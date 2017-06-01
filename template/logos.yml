@@ -16,3 +16,39 @@ square:
     height: 650
     x: 0
     y: 0
+ogp:
+  base:
+    width: 800
+    height: 420
+  mark:
+    width: 800
+    height: 280
+    x: 0
+    y: 0
+linejp:
+  base:
+    width: 858
+    height: 200
+  mark:
+    width: 200
+    height: 200
+    x: 0
+    y: 0
+squarejp:
+  base:
+    width: 800
+    height: 800
+  mark:
+    width: 800
+    height: 650
+    x: 0
+    y: 0
+ogpjp:
+  base:
+    width: 800
+    height: 420
+  mark:
+    width: 800
+    height: 280
+    x: 0
+    y: 0

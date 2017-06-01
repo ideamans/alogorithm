@@ -71,6 +71,7 @@ class Logo {
   markSvg() {
     // TrianglifyによるマークSVGを生成
     let mark = this.logo.mark;
+    let cell_rate = this.logo.cell_rate || 1.0;
     let opts = _.defaultsDeep({
       width: mark.width,
       height: mark.height,
@@ -79,7 +80,7 @@ class Logo {
 
     // セルサイズはロゴのサイズに応じて調整
     if ( Settings.cellSizeRate > 0 ) {
-      opts.cell_size = mark.width * Settings.cellSizeRate;
+      opts.cell_size = mark.width * Settings.cellSizeRate * cell_rate;
     }
 
     // Trianglifyを生成
