@@ -1,13 +1,13 @@
 'use strict';
 
 const Express = require('express'),
-  Trianglify  = require('trianglify'),
-  Svg2Png     = require('svg2png'),
-  Path        = require('path'),
-  Fs          = require('fs'),
-  _           = require('lodash'),
-  Jsdom       = require('jsdom'),
-  Jsyaml      = require('js-yaml');
+  Trianglify = require('trianglify'),
+  Svg2Png = require('svg2png'),
+  Path = require('path'),
+  Fs = require('fs'),
+  _ = require('lodash'),
+  Jsdom = require('jsdom'),
+  Jsyaml = require('js-yaml');
 
 const { JSDOM } = Jsdom;
 
@@ -27,22 +27,22 @@ const Settings = {
   },
 };
 
-const Logos = Jsyaml.safeLoad(Fs.readFileSync(Path.format({dir: Settings.templateDir, base: 'logos.yml'})));
+const Logos = Jsyaml.safeLoad(Fs.readFileSync(Path.format({ dir: Settings.templateDir, base: 'logos.yml' })));
 
 class HttpException extends Error {
-  constructor(message, status=500) {
+  constructor(message, status = 500) {
     super(message);
     this.status = status;
   }
 }
 
 class Logo {
-  constructor(opts={}) {
+  constructor(opts = {}) {
     // 基本属性
     this.opts = _.defaultsDeep(opts, Settings.optionsDefaults);
     this.logo = Logos[this.opts.type];
-    if ( !this.logo ) throw new HttpException('Logo type not found.', 404);
-    this.template = Path.format({dir: Settings.templateDir, name: this.opts.type, ext: '.svg'});
+    if (!this.logo) throw new HttpException('Logo type not found.', 404);
+    this.template = Path.format({ dir: Settings.templateDir, name: this.opts.type, ext: '.svg' });
     this.seed = _.compact([Settings.seedPrefix, this.opts.phrase]).join(Settings.delimiter);
 
     // ロゴテンプレートとサイズ計算
@@ -50,22 +50,22 @@ class Logo {
       mark = this.logo.mark,
       rate = 1;
 
-    if ( this.opts.width && parseInt(this.opts.width) > 0 ) {
+    if (this.opts.width && parseInt(this.opts.width) > 0) {
       rate = parseFloat(this.opts.width) / base.width;
-    } else if ( this.opts.height && parseInt(this.opts.height) > 0 ) {
+    } else if (this.opts.height && parseInt(this.opts.height) > 0) {
       rate = parseFloat(this.opts.height) / base.height;
     }
 
-    if ( rate != 1 ) {
+    if (rate != 1) {
       base.width = Math.round(base.width * rate);
       base.height = Math.round(base.height * rate);
     }
 
     // サイズチェック
-    if ( base.width > Settings.maxSize ) throw new HttpException(`width over ${Settings.maxSize}`);
-    if ( base.width < Settings.minSize ) throw new HttpException(`width under ${Settings.minSize}`);
-    if ( base.height > Settings.maxSize ) throw new HttpException(`height over ${Settings.maxSize}`);
-    if ( base.height < Settings.minSize ) throw new HttpException(`height under ${Settings.minSize}`);
+    if (base.width > Settings.maxSize) throw new HttpException(`width over ${Settings.maxSize}`);
+    if (base.width < Settings.minSize) throw new HttpException(`width under ${Settings.minSize}`);
+    if (base.height > Settings.maxSize) throw new HttpException(`height over ${Settings.maxSize}`);
+    if (base.height < Settings.minSize) throw new HttpException(`height under ${Settings.minSize}`);
   }
 
   markSvg() {
@@ -79,7 +79,7 @@ class Logo {
     }, Settings.trianglifyDefaultOptions);
 
     // セルサイズはロゴのサイズに応じて調整
-    if ( Settings.cellSizeRate > 0 ) {
+    if (Settings.cellSizeRate > 0) {
       opts.cell_size = mark.width * Settings.cellSizeRate * cell_rate;
     }
 
@@ -129,8 +129,7 @@ class Logo {
         let base = this.logo.base;
         // PNGファイルに変換
         return Svg2Png(
-          new Buffer(Settings.svgDeclaration + svg.outerHTML),
-          { witdh: base.width, height: base.height }
+          new Buffer(Settings.svgDeclaration + svg.outerHTML), { witdh: base.width, height: base.height }
         );
       });
   }
@@ -148,6 +147,7 @@ app.get('/:type.svg', (req, res, next) => {
   // SVG
   logo.renderSvg().then((svg) => {
     res.setHeader('Content-Type', 'image/svg+xml');
+    res.setHeader('Expires', new Date(Date.now() + 1000 * 60 * 60 * 24 * 365).toUTCString());
     res.send(Settings.svgDeclaration + svg.outerHTML);
     next();
   }).catch((ex) => {
@@ -163,6 +163,7 @@ app.get('/:type.png', (req, res, next) => {
   // PNG
   logo.renderPng().then((png) => {
     res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Expires', new Date(Date.now() + 1000 * 60 * 60 * 24 * 365).toUTCString());
     res.send(png);
     next();
   }).catch((ex) => {

@@ -52,3 +52,23 @@ ogpjp:
     height: 280
     x: 0
     y: 0
+screen169:
+  cell_rate: 0.4
+  base:
+    width: 800
+    height: 450
+  mark:
+    width: 800
+    height: 450
+    x: 0
+    y: 0
+screen43:
+  cell_rate: 0.4
+  base:
+    width: 800
+    height: 600
+  mark:
+    width: 800
+    height: 600
+    x: 0
+    y: 0
