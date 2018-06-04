@@ -13,10 +13,10 @@ RUN mkdir -p /app
 WORKDIR /app
 
 ENV NPM_CONFIG_PREFIX /node_modules
+ENV PATH $PATH:/node_modules/bin
 COPY package.json /app/package.json
-RUN npm install -g yarn@0.23
-
-RUN yarn global add node-gyp nodemon
+RUN npm install -g yarn
+RUN npm install -g node-gyp nodemon
 RUN yarn install
 
 EXPOSE 3000
